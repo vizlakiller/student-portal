@@ -1,58 +1,108 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Student Portal
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A web-based student management system for colleges, training centres and tuition centres. It is built with Laravel 13, Blade and plain CSS. Staff can keep student records, record subject results, and print academic transcripts, with GPA and CGPA worked out automatically.
 
-## About Laravel
+![Dashboard](docs/screenshots/dashboard.png)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Dashboard:** student totals, students per programme, status breakdown, grade distribution, top students by CGPA, and recently added students.
+- **Students:**
+  - add, edit and delete students
+  - search by name, student number or email
+  - filter by programme and status
+  - export the list to Excel (CSV)
+- **Student record:** a profile page with results grouped by semester, semester GPA and cumulative CGPA.
+- **Results:** enter marks from 0 to 100. The grade and grade point come from a configurable grading scale.
+- **Printable transcript:** a clean A4 layout you can print or save as PDF from the browser.
+- **Programmes and subjects:** manage courses and subjects with credit hours. The system blocks deleting records that are still in use.
+- **Staff accounts with roles:** admins manage accounts; staff manage academic records. Public sign-up is disabled.
+- **My profile:** each user can update their details and change their password.
+- **Security:**
+  - login rate limiting
+  - hashed passwords
+  - CSRF protection
+  - validation on every form
+  - result URLs scoped to their student
+- **Responsive layout** that works on phones and tablets.
+- **Automated tests:** 38 feature tests covering every module.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Student record | Printable transcript |
+|---|---|
+| ![Student record](docs/screenshots/student.png) | ![Transcript](docs/screenshots/transcript.png) |
 
-## Learning Laravel
+## Tech stack
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- PHP 8.3+ and Laravel 13
+- Blade templates and components, with plain CSS (no build step needed)
+- SQLite by default; works with MySQL or MariaDB
+- PHPUnit for tests
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Getting started
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/<your-username>/student-portal.git
+cd student-portal
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan db:seed      # optional: sample programmes, subjects and 36 students
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+With [Laravel Herd](https://herd.laravel.com), put the folder in your Herd directory and open `http://student-portal.test`. Without Herd, run `php artisan serve` and open `http://127.0.0.1:8000`.
 
-## Contributing
+### Demo accounts (after `db:seed`)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Role  | Email               | Password   |
+|-------|---------------------|------------|
+| Admin | `admin@example.com` | `password` |
+| Staff | `staff@example.com` | `password` |
 
-## Code of Conduct
+Change these passwords before putting the system online.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Customising for a client
 
-## Security Vulnerabilities
+| What | Where |
+|---|---|
+| Portal name and the institution name on transcripts | `.env`: `PORTAL_NAME="Student Portal"` and `INSTITUTION_NAME="Kolej Teknologi Melaka"` |
+| Grading scale (marks, grades, grade points) | `config/grading.php` |
+| Colours and fonts | the variables at the top of `public/css/app.css` |
+| Student statuses, genders and programme levels | the constants in `app/Models/Student.php` and `app/Models/Programme.php` |
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Using MySQL instead of SQLite
 
-## License
+Create an empty database, then update `.env`:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=student_portal
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Then run `php artisan migrate --seed`.
+
+## Running the tests
+
+```bash
+php artisan test
+```
+
+## Where things are
+
+```
+app/Http/Controllers/   Student, Result, Programme, Subject, User, Profile, Dashboard, Auth
+app/Models/             Student, Result, Programme, Subject, User
+app/Support/Grading.php Marks to grade, GPA and CGPA calculations
+config/grading.php      The grading scale
+config/portal.php       Portal and institution names
+database/migrations/    Table definitions
+database/seeders/       Sample data
+resources/views/        Blade templates (layouts, components and one folder per module)
+public/css/app.css      All styles
+routes/web.php          All URLs
+tests/Feature/          Automated tests
+```

@@ -1,25 +1,20 @@
-@extends('layouts.app')
-@section('title', 'Login')
+@extends('layouts.guest')
+@section('title', 'Log in')
 
 @section('content')
-    <h2>Login</h2>
+    <h1>Log in</h1>
+    <p class="muted">Use the account your administrator gave you.</p>
 
-    <form method="POST" action="{{ route('login') }}">
+    <form method="POST" action="{{ route('login') }}" class="stack">
         @csrf
 
-        <label>Email
-            <input type="email" name="email" value="{{ old('email') }}" required autofocus>
-        </label>
-        @error('email') <div class="error">{{ $message }}</div> @enderror
+        <x-input label="Email" name="email" type="email" required autofocus autocomplete="username" />
+        <x-input label="Password" name="password" type="password" required autocomplete="current-password" />
 
-        <label>Password
-            <input type="password" name="password" required>
+        <label class="checkbox">
+            <input type="checkbox" name="remember" value="1"> Keep me logged in
         </label>
 
-        <label><input type="checkbox" name="remember"> Remember me</label>
-
-        <button type="submit">Login</button>
+        <button type="submit" class="btn btn-primary btn-block">Log in</button>
     </form>
-
-    <p>No account? <a href="{{ route('register') }}">Register</a></p>
 @endsection
