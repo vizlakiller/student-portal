@@ -7,3 +7,4 @@
               :value="$programme->level" />
 </div>
 <x-input label="Name" name="name" :value="$programme->name" required placeholder="Diploma in Computer Science" />
+<x-select label="Department" name="department_id" placeholder="No department" :options="$departments" :value="$programme->department_id" />

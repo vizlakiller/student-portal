@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * A head of department's request to change a mark. It only takes effect
- * when the teacher of that subject approves it.
+ * when a lecturer of the student's session approves it.
  */
 #[Fillable(['old_marks', 'new_marks', 'reason', 'requested_by', 'status', 'decided_by', 'decided_at', 'decision_note'])]
 class ResultChangeRequest extends Model
@@ -37,13 +37,20 @@ class ResultChangeRequest extends Model
     }
 
     /**
-     * Requests a user should see: teachers see requests for their own subjects,
+     * Requests a user should see: lecturers see requests for results they are
+     * responsible for (their session, or their subject for older results),
      * a head of department sees the requests they made, the super admin sees all.
      */
     public function scopeVisibleTo(Builder $query, User $user): void
     {
-        if ($user->hasRole('teacher')) {
-            $query->whereHas('result.subject', fn (Builder $subject) => $subject->where('teacher_id', $user->id));
+        if ($user->hasRole('lecturer')) {
+            $query->whereHas('result', function (Builder $result) use ($user) {
+                $result->where(function (Builder $result) use ($user) {
+                    $result->whereHas('classSession.lecturers', fn (Builder $l) => $l->whereKey($user->id))
+                        ->orWhere(fn (Builder $old) => $old->whereNull('class_session_id')
+                            ->whereHas('subject.lecturers', fn (Builder $l) => $l->whereKey($user->id)));
+                });
+            });
         } elseif (! $user->isSuperAdmin()) {
             $query->where('requested_by', $user->id);
         }

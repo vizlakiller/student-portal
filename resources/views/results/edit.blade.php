@@ -9,7 +9,7 @@
         @method('PUT')
 
         <p class="muted">
-            As super admin you can change marks directly, without the teacher's approval.
+            As super admin you can change marks directly, without the lecturer's approval.
             @if ($result->isMarked())
                 Current grade: @include('partials.grade', ['grade' => $result->grade]) ({{ $result->marks }} marks).
             @endif

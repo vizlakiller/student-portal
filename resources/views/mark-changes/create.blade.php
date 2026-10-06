@@ -11,11 +11,13 @@
             Current mark: <strong>{{ $result->marks }}</strong>
             @include('partials.grade', ['grade' => $result->grade])
         </p>
+        @php $lecturers = $result->responsibleLecturers(); @endphp
         <p class="muted">
-            @if ($result->subject->teacher)
-                The mark changes only after {{ $result->subject->teacher->name }}, the subject teacher, approves your request.
+            @if ($lecturers->isNotEmpty())
+                The mark changes only after {{ $lecturers->pluck('name')->join(', ', ' or ') }}
+                ({{ $result->classSession ? 'lecturer of '.$result->classSession->name : 'subject lecturer' }}) approves your request.
             @else
-                This subject has no teacher yet, so nobody can approve the change. Assign a teacher on the Subjects page first.
+                No lecturer is assigned yet, so only the super admin can approve this change.
             @endif
         </p>
 

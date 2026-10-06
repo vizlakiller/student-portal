@@ -3,7 +3,9 @@
 @section('subtitle', 'Balances are worked out from charges billed minus payments received.')
 
 @section('actions')
-    <a href="{{ route('finance.billing.create') }}" class="btn btn-primary">Bill a programme</a>
+    @can('manage-finance')
+        <a href="{{ route('finance.billing.create') }}" class="btn btn-primary">Bill a programme</a>
+    @endcan
 @endsection
 
 @use('App\Support\Branding')
@@ -83,7 +85,11 @@
                                     <td class="num">{{ number_format((float) $student->payments_sum_amount, 2) }}</td>
                                     <td class="num">@include('finance._balance', ['balance' => $balance])</td>
                                     <td class="row-actions">
-                                        <a href="{{ route('finance.payments.create', $student) }}">Record payment</a>
+                                        @can('manage-finance')
+                                            <a href="{{ route('finance.payments.create', $student) }}">Record payment</a>
+                                        @else
+                                            <a href="{{ route('finance.students.show', $student) }}">Statement</a>
+                                        @endcan
                                     </td>
                                 </tr>
                             @endforeach

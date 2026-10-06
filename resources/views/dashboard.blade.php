@@ -65,7 +65,7 @@
             <h2>Grade distribution</h2>
             @php $maxGrade = max(max($grades), 1); @endphp
             @if (array_sum($grades) === 0)
-                <p class="empty">No results recorded yet. Grades appear here once teachers enter marks.</p>
+                <p class="empty">No results recorded yet. Grades appear here once lecturers enter marks.</p>
             @else
                 <div class="columns" role="img" aria-label="Number of results for each grade">
                     @foreach ($grades as $grade => $total)

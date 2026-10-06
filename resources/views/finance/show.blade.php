@@ -7,8 +7,10 @@
 
 @section('actions')
     <button type="button" class="btn" onclick="window.print()">Print statement</button>
-    <a href="{{ route('finance.charges.create', $student) }}" class="btn">Add charge</a>
-    <a href="{{ route('finance.payments.create', $student) }}" class="btn btn-primary">Record payment</a>
+    @can('manage-finance')
+        <a href="{{ route('finance.charges.create', $student) }}" class="btn">Add charge</a>
+        <a href="{{ route('finance.payments.create', $student) }}" class="btn btn-primary">Record payment</a>
+    @endcan
 @endsection
 
 @section('content')
@@ -32,7 +34,9 @@
         @if ($entries->isEmpty())
             <div class="empty-state">
                 <p>No charges or payments yet.</p>
-                <a href="{{ route('finance.charges.create', $student) }}" class="btn">Add the first charge</a>
+                @can('manage-finance')
+                    <a href="{{ route('finance.charges.create', $student) }}" class="btn">Add the first charge</a>
+                @endcan
             </div>
         @else
             <div class="table-wrap">
@@ -66,7 +70,7 @@
                                                 <button type="submit" class="link-button danger">Delete</button>
                                             </form>
                                         @endcan
-                                    @else
+                                    @elsecan('manage-finance')
                                         <form method="POST" action="{{ route('finance.charges.destroy', $entry['model']) }}"
                                               onsubmit="return confirm(@js('Remove the charge "'.$entry['model']->description.'"?'))">
                                             @csrf

@@ -60,14 +60,21 @@ class FinanceSeeder extends Seeder
                     default                             => 0,
                 };
 
-                if ($amount > 0) {
-                    $paidAt = $billedOn->copy()->addDays(mt_rand(3, 28));
+                // Some students pay the latest semester in two instalments, a month apart.
+                $instalments = match (true) {
+                    $amount <= 0                              => [],
+                    $isLatest && $amount == $fee && mt_rand(0, 1) => [[$fee / 2, mt_rand(3, 14)], [$fee / 2, mt_rand(30, 40)]],
+                    default                                   => [[$amount, mt_rand(3, 28)]],
+                };
+
+                foreach ($instalments as [$instalment, $afterDays]) {
+                    $paidAt = $billedOn->copy()->addDays($afterDays);
                     if ($paidAt->isFuture()) {
                         $paidAt = now();
                     }
 
                     $payments[] = [$student, [
-                        'amount'      => $amount,
+                        'amount'      => round($instalment, 2),
                         'method'      => Payment::METHODS[mt_rand(0, 3)],
                         'reference'   => mt_rand(0, 1) ? 'TRX'.mt_rand(100000, 999999) : null,
                         'paid_at'     => $paidAt,

@@ -10,7 +10,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 
 /**
- * One mark change waiting for the teacher, and one already approved.
+ * One mark change waiting for the lecturer, and one already approved.
  */
 class MarkChangeSeeder extends Seeder
 {
@@ -21,7 +21,8 @@ class MarkChangeSeeder extends Seeder
         }
 
         $hodId = User::where('email', 'hod@example.com')->value('id');
-        $teacherId = User::where('email', 'teacher@example.com')->value('id');
+        $lecturerId = User::where('email', 'lecturer@example.com')->value('id')
+            ?? User::where('role', 'lecturer')->value('id');
         $csc1013 = Subject::where('code', 'CSC1013')->value('id');
 
         $pending = $this->resultFor('DCS2024003', $csc1013);
@@ -44,7 +45,7 @@ class MarkChangeSeeder extends Seeder
                 'reason'        => 'Assignment 2 marks were entered late.',
                 'requested_by'  => $hodId,
                 'status'        => 'approved',
-                'decided_by'    => $teacherId,
+                'decided_by'    => $lecturerId,
                 'decided_at'    => now()->subDays(3),
                 'decision_note' => 'Checked against the assignment records.',
             ]);

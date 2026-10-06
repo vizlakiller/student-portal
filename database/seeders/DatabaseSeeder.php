@@ -17,14 +17,17 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $accounts = [
-            ['admin@example.com',      'System Administrator',         'super_admin', 'ADM001'],
-            ['adminstaff@example.com', 'Nurul Huda binti Ahmad',       'admin_staff', 'ADM014'],
-            ['hod@example.com',        'Dr. Rahim bin Abdullah',       'hod',         'ACD002'],
-            ['registrar@example.com',  'Puan Zarina binti Hashim',     'registrar',   'REG003'],
-            ['accountant@example.com', 'Encik Hakim bin Razak',        'accountant',  'FIN004'],
-            ['teacher@example.com',    'Encik Faizal bin Omar',        'teacher',     'LEC101'],
-            ['teacher2@example.com',   'Puan Kavitha a/p Raman',       'teacher',     'LEC102'],
-            ['teacher3@example.com',   'Mr. Tan Boon Huat',            'teacher',     'LEC103'],
+            ['admin@example.com',      'System Administrator',                   'super_admin', 'ADM001'],
+            ['director@example.com',   "Dato' Dr. Hamid bin Osman",              'management',  'MGT001'],
+            ['adminstaff@example.com', 'Nurul Huda binti Ahmad',                 'admin_staff', 'ADM014'],
+            ['hod@example.com',        'Dr. Rahim bin Abdullah',                 'hod',         'ACD002'],
+            ['hod2@example.com',       'Prof. Madya Dr. Norazlina binti Yusof',  'hod',         'ACD005'],
+            ['registrar@example.com',  'Puan Zarina binti Hashim',               'registrar',   'REG003'],
+            ['accountant@example.com', 'Encik Hakim bin Razak',                  'accountant',  'FIN004'],
+            ['lecturer@example.com',   'Encik Faizal bin Omar',                  'lecturer',    'LEC101'],
+            ['lecturer2@example.com',  'Puan Kavitha a/p Raman',                 'lecturer',    'LEC102'],
+            ['lecturer3@example.com',  'Mr. Tan Boon Huat',                      'lecturer',    'LEC103'],
+            ['lecturer4@example.com',  'Dr. Lim Siew Mei',                       'lecturer',    'LEC104'],
         ];
 
         foreach ($accounts as $i => [$email, $name, $role, $staffNo]) {
@@ -40,22 +43,36 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ProgrammeSeeder::class,
             SubjectSeeder::class,
+            DepartmentSeeder::class,
         ]);
 
-        // Which teacher teaches which subjects (only fills subjects without a teacher).
+        // Who teaches which subject. Only fills subjects that have no lecturers yet.
         $teaching = [
-            'teacher@example.com'  => ['CSC1013', 'CSC1043', 'WEB2013', 'SEN2023', 'PRJ2044'],
-            'teacher2@example.com' => ['MAT1023', 'DBS1053', 'NET1063'],
-            'teacher3@example.com' => ['ITC1033', 'ENG1012', 'MPU2032'],
+            'CSC1013' => ['lecturer@example.com', 'lecturer4@example.com'],   // taught together
+            'CSC1043' => ['lecturer@example.com', 'lecturer4@example.com'],   // one group each
+            'WEB2013' => ['lecturer@example.com'],
+            'SEN2023' => ['lecturer@example.com'],
+            'PRJ2044' => ['lecturer@example.com'],
+            'MAT1023' => ['lecturer2@example.com'],
+            'DBS1053' => ['lecturer2@example.com'],
+            'NET1063' => ['lecturer2@example.com'],
+            'ITC1033' => ['lecturer3@example.com'],
+            'ENG1012' => ['lecturer3@example.com'],
+            'MPU2032' => ['lecturer3@example.com'],
         ];
 
-        foreach ($teaching as $email => $codes) {
-            $teacherId = User::where('email', $email)->value('id');
-            Subject::whereIn('code', $codes)->whereNull('teacher_id')->update(['teacher_id' => $teacherId]);
+        foreach ($teaching as $code => $emails) {
+            $subject = Subject::where('code', $code)->first();
+
+            if ($subject && ! $subject->lecturers()->exists()) {
+                $subject->lecturers()->sync(User::whereIn('email', $emails)->pluck('id'));
+            }
         }
 
         $this->call([
+            TermAndClassroomSeeder::class,
             StudentSeeder::class,
+            TimetableSeeder::class,
             FinanceSeeder::class,
             MarkChangeSeeder::class,
         ]);

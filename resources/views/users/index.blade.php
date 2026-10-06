@@ -65,13 +65,14 @@
     <section class="panel">
         <h2>What each role can do</h2>
         <dl class="role-guide">
-            <div><dt>Super admin</dt><dd>Everything, including branding, user accounts and changing marks directly.</dd></div>
-            <div><dt>Admin staff</dt><dd>Views students, teachers and subjects. Edits students' personal and contact details. Can't see results.</dd></div>
-            <div><dt>Head of department</dt><dd>Assigns teachers to subjects, sees all results, asks for mark changes (the subject teacher must approve).</dd></div>
-            <div><dt>Registrar</dt><dd>Adds and edits students, registers them for subjects, sees results and prints transcripts. Can't change marks.</dd></div>
-            <div><dt>Teacher</dt><dd>Enters marks for their own subjects and approves or rejects mark changes.</dd></div>
+            <div><dt>Super admin</dt><dd>Everything, including branding, user accounts, terms, departments and changing marks directly.</dd></div>
+            <div><dt>Management (Director / COO / CEO)</dt><dd>Sees statistics, students, results, timetable and fees. Can't change anything.</dd></div>
+            <div><dt>Admin staff</dt><dd>Views students, lecturers and subjects; edits students' contact details; adds classrooms. Can't see results.</dd></div>
+            <div><dt>Head of department</dt><dd>For the departments they head: subjects, lecturers, sessions and timetable, and asks for mark changes. Sees all results.</dd></div>
+            <div><dt>Registrar</dt><dd>Adds and edits students, registers them into sessions, sees results and prints transcripts. Can't change marks.</dd></div>
+            <div><dt>Lecturer</dt><dd>Enters marks for their own sessions and approves or rejects mark changes for them.</dd></div>
             <div><dt>Accountant</dt><dd>Bills fees, records payments, prints receipts and sees who owes money.</dd></div>
-            <div><dt>Student</dt><dd>Sees their own subjects, results and transcript.</dd></div>
+            <div><dt>Student</dt><dd>Sees their own subjects, results, transcript and timetable.</dd></div>
         </dl>
         <p class="muted small">To change what a role can do, edit config/roles.php.</p>
     </section>

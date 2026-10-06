@@ -9,15 +9,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * Head of department asks to change a mark; the subject's teacher approves
- * or rejects it. The mark only changes when the teacher approves.
+ * Head of department asks to change a mark; a lecturer of the student's
+ * session approves or rejects it. The mark only changes when they approve.
  */
 class MarkChangeController extends Controller
 {
     public function index(Request $request)
     {
         $requests = ResultChangeRequest::visibleTo($request->user())
-            ->with(['result.student', 'result.subject.teacher', 'requester', 'decider'])
+            ->with(['result.student', 'result.subject.lecturers', 'result.classSession.lecturers', 'requester', 'decider'])
             ->orderByRaw("status = 'pending' desc")
             ->latest()
             ->paginate(20);
@@ -29,7 +29,7 @@ class MarkChangeController extends Controller
     {
         Gate::authorize('request-mark-change', $result);
 
-        $result->load(['student', 'subject.teacher']);
+        $result->load(['student', 'subject.lecturers', 'classSession.lecturers']);
 
         return view('mark-changes.create', compact('result'));
     }
@@ -54,13 +54,13 @@ class MarkChangeController extends Controller
             'requested_by' => $request->user()->id,
         ]);
 
-        $teacher = $result->subject->teacher?->name;
+        $lecturers = $result->responsibleLecturers()->pluck('name');
 
         return redirect()
             ->route('students.show', $result->student_id)
-            ->with('success', $teacher
-                ? "Change sent to {$teacher} for approval. The mark changes once they approve it."
-                : 'Change saved, but this subject has no teacher yet. Assign a teacher so it can be approved.');
+            ->with('success', $lecturers->isNotEmpty()
+                ? 'Change sent to '.$lecturers->join(', ', ' or ').' for approval. The mark changes once one of them approves it.'
+                : 'Change saved, but no lecturer is assigned yet. Assign one so it can be approved (or the super admin can approve it).');
     }
 
     public function approve(Request $request, ResultChangeRequest $changeRequest)

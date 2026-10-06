@@ -177,7 +177,7 @@ class StudentController extends Controller
      */
     public static function recordData(Student $student): array
     {
-        $student->load(['programme', 'results.subject.teacher', 'results.pendingChange']);
+        $student->load(['programme', 'results.subject.lecturers', 'results.classSession.lecturers', 'results.classSession.term', 'results.pendingChange']);
 
         $semesters = $student->results
             ->sortBy('subject.code')

@@ -3,6 +3,7 @@
 @section('subtitle', $student->programme->name)
 
 @section('actions')
+    <a href="{{ route('timetable.mine') }}" class="btn">My timetable</a>
     @if ($cgpa !== null)
         <a href="{{ route('my.transcript') }}" class="btn btn-primary" target="_blank">Print my transcript</a>
     @endif
@@ -49,7 +50,7 @@
                                 <td class="ref">{{ $result->subject->code }}</td>
                                 <td>
                                     {{ $result->subject->name }}
-                                    <div class="muted small">{{ $result->subject->teacher?->name }}</div>
+                                    <div class="muted small">{{ $result->classSession ? $result->classSession->name.', ' : '' }}{{ $result->responsibleLecturers()->pluck('name')->join(', ') }}</div>
                                 </td>
                                 <td class="num">{{ $result->subject->credit_hours }}</td>
                                 <td class="num">{{ $result->marks ?? '–' }}</td>

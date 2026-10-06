@@ -35,7 +35,7 @@ class UserFactory extends Factory
     }
 
     /**
-     * Give the user a role, e.g. User::factory()->role('teacher')->create().
+     * Give the user a role, e.g. User::factory()->role('lecturer')->create().
      */
     public function role(string $role): static
     {

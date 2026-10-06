@@ -27,30 +27,38 @@ class DashboardController extends Controller
             return redirect()->route('finance.index');
         }
 
-        if ($user->hasRole('teacher')) {
-            return $this->teacherDashboard($request);
+        if ($user->hasRole('management')) {
+            return redirect()->route('statistics');
+        }
+
+        if ($user->hasRole('lecturer')) {
+            return $this->lecturerDashboard($request);
         }
 
         return $this->generalDashboard($request);
     }
 
-    private function teacherDashboard(Request $request)
+    private function lecturerDashboard(Request $request)
     {
-        $subjects = $request->user()->subjects()
+        $term = \App\Models\Term::current();
+
+        $sessions = $request->user()->classSessions()
+            ->with(['subject', 'lecturers', 'slots.classroom'])
             ->withCount([
                 'results',
                 'results as marked_count' => fn ($query) => $query->whereNotNull('marks'),
             ])
-            ->orderBy('code')
-            ->get();
+            ->where('term_id', $term?->id)
+            ->get()
+            ->sortBy(fn ($session) => $session->subject->code.$session->name);
 
         $pending = ResultChangeRequest::visibleTo($request->user())
             ->where('status', 'pending')
-            ->with(['result.student', 'result.subject', 'requester'])
+            ->with(['result.student', 'result.subject.lecturers', 'result.classSession.lecturers', 'requester'])
             ->latest()
             ->get();
 
-        return view('dashboards.teacher', compact('subjects', 'pending'));
+        return view('dashboards.lecturer', compact('sessions', 'pending', 'term'));
     }
 
     private function generalDashboard(Request $request)

@@ -14,7 +14,8 @@
     @endif
 
     <div class="section-header">
-        <h2>My subjects</h2>
+        <h2>My sessions{{ $term ? ' in '.$term->name : '' }}</h2>
+        <a href="{{ route('timetable.mine') }}">My timetable</a>
     </div>
-    @include('marks._subjects')
+    @include('marks._sessions')
 @endsection

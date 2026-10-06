@@ -72,9 +72,15 @@ class UserController extends Controller
             $data['role'] = 'super_admin';
         }
 
-        // A teacher who stops being a teacher no longer teaches their subjects.
-        if ($user->hasRole('teacher') && $data['role'] !== 'teacher') {
-            $user->subjects()->update(['teacher_id' => null]);
+        // A lecturer who stops being a lecturer leaves their subjects and sessions.
+        if ($user->hasRole('lecturer') && $data['role'] !== 'lecturer') {
+            $user->lecturedSubjects()->detach();
+            $user->classSessions()->detach();
+        }
+
+        // A head of department who stops being one no longer heads their departments.
+        if ($user->hasRole('hod') && $data['role'] !== 'hod') {
+            $user->departments()->update(['hod_id' => null]);
         }
 
         // Leave the password unchanged when the field is empty.
@@ -99,7 +105,7 @@ class UserController extends Controller
             return back()->with('error', 'Student logins are removed by deleting the student record.');
         }
 
-        $user->delete();   // their subjects become unassigned
+        $user->delete();   // their subjects, sessions and departments become unassigned
 
         return redirect()
             ->route('users.index')

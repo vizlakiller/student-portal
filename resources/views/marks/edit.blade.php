@@ -1,15 +1,15 @@
 @extends('layouts.app')
-@section('title', 'Marks: '.$subject->code)
-@section('subtitle', $subject->name.', '.$subject->credit_hours.' credit hours')
-@section('back')<a href="{{ route('marks.index') }}">My subjects</a>@endsection
+@section('title', 'Marks: '.$session->label())
+@section('subtitle', $session->subject->name.', '.$session->subject->credit_hours.' credit hours, '.$session->term->name)
+@section('back')<a href="{{ route('marks.index', ['term' => $session->term_id]) }}">My sessions</a>@endsection
 
 @section('content')
     @if ($results->isEmpty())
         <div class="panel empty-state">
-            <p>No students are registered for {{ $subject->code }} yet. The registrar registers students for subjects.</p>
+            <p>No students are registered in {{ $session->label() }} yet. The registrar registers students into sessions.</p>
         </div>
     @else
-        <form method="POST" action="{{ route('marks.update', $subject) }}" class="panel flush">
+        <form method="POST" action="{{ route('marks.update', $session) }}" class="panel flush">
             @csrf
             @method('PUT')
 

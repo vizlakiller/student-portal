@@ -4,8 +4,12 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\ChargeController;
+use App\Http\Controllers\ClassroomController;
+use App\Http\Controllers\ClassSessionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\LecturerController;
 use App\Http\Controllers\MarkChangeController;
 use App\Http\Controllers\MarksController;
 use App\Http\Controllers\MyResultsController;
@@ -14,15 +18,19 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgrammeController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ResultController;
+use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubjectController;
-use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\TermController;
+use App\Http\Controllers\TimetableController;
+use App\Http\Controllers\TimetableSlotController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
 | Who can open each page is decided by the "can:..." middleware below,
-| using the permissions in config/roles.php.
+| using the permissions in config/roles.php. Department limits (a head of
+| department managing only their own departments) are checked in the controllers.
 */
 
 // Visitors are sent to the dashboard; the "auth" middleware redirects
@@ -41,6 +49,7 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
 
     // Everyone lands here; it shows the right page for each role.
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/statistics', StatisticsController::class)->name('statistics')->middleware('can:view-statistics');
 
     // My profile and password (everyone)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -69,21 +78,21 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
         Route::delete('/students/{student}/results/{result}', [ResultController::class, 'destroy'])->name('results.destroy')->middleware('can:register-subjects');
     });
 
-    // Teachers enter marks for their own subjects
-    Route::get('/my-subjects', [MarksController::class, 'index'])->name('marks.index')->middleware('can:teach');
-    Route::get('/subjects/{subject}/marks', [MarksController::class, 'edit'])->name('marks.edit');      // checked in the controller
-    Route::put('/subjects/{subject}/marks', [MarksController::class, 'update'])->name('marks.update');  // checked in the controller
+    // Lecturers enter marks for their own sessions
+    Route::get('/my-sessions', [MarksController::class, 'index'])->name('marks.index')->middleware('can:teach');
+    Route::get('/sessions/{classSession}/marks', [MarksController::class, 'edit'])->name('marks.edit');      // checked in the controller
+    Route::put('/sessions/{classSession}/marks', [MarksController::class, 'update'])->name('marks.update');  // checked in the controller
 
-    // Head of department asks for a mark change; the subject teacher approves it
+    // Head of department asks for a mark change; the session lecturer approves it
     Route::get('/mark-changes', [MarkChangeController::class, 'index'])->name('mark-changes.index')->middleware('can:view-mark-changes');
     Route::get('/results/{result}/mark-change', [MarkChangeController::class, 'create'])->name('mark-changes.create');
     Route::post('/results/{result}/mark-change', [MarkChangeController::class, 'store'])->name('mark-changes.store');
     Route::post('/mark-changes/{changeRequest}/approve', [MarkChangeController::class, 'approve'])->name('mark-changes.approve');
     Route::post('/mark-changes/{changeRequest}/reject', [MarkChangeController::class, 'reject'])->name('mark-changes.reject');
 
-    // ---------- Teachers, subjects and programmes ----------
-    Route::get('/teachers', [TeacherController::class, 'index'])->name('teachers.index')->middleware('can:view-teachers');
-    Route::get('/teachers/{teacher}', [TeacherController::class, 'show'])->name('teachers.show')->middleware('can:view-teachers');
+    // ---------- Lecturers, subjects, programmes and departments ----------
+    Route::get('/lecturers', [LecturerController::class, 'index'])->name('lecturers.index')->middleware('can:view-lecturers');
+    Route::get('/lecturers/{lecturer}', [LecturerController::class, 'show'])->name('lecturers.show')->middleware('can:view-lecturers');
 
     Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects.index')->middleware('can:view-subjects');
     Route::resource('subjects', SubjectController::class)->except(['index', 'show'])->middleware('can:manage-subjects');
@@ -91,19 +100,50 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
     Route::get('/programmes', [ProgrammeController::class, 'index'])->name('programmes.index')->middleware('can:view-programmes');
     Route::resource('programmes', ProgrammeController::class)->except(['index', 'show'])->middleware('can:manage-programmes');
 
+    Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index')->middleware('can:view-departments');
+    Route::resource('departments', DepartmentController::class)->except(['index', 'show'])->middleware('can:manage-departments');
+
+    // ---------- Timetable ----------
+    Route::get('/timetable', [TimetableController::class, 'index'])->name('timetable.index')->middleware('can:view-timetable');
+    Route::get('/my-timetable', [TimetableController::class, 'mine'])->name('timetable.mine');   // lecturers and students; checked in the controller
+
+    Route::get('/sessions', [ClassSessionController::class, 'index'])->name('sessions.index')->middleware('can:view-timetable');
+    Route::get('/sessions/create', [ClassSessionController::class, 'create'])->name('sessions.create')->middleware('can:manage-timetable');
+    Route::post('/sessions', [ClassSessionController::class, 'store'])->name('sessions.store')->middleware('can:manage-timetable');
+    Route::get('/sessions/{classSession}', [ClassSessionController::class, 'show'])->name('sessions.show')->middleware('can:view-timetable');
+    Route::get('/sessions/{classSession}/edit', [ClassSessionController::class, 'edit'])->name('sessions.edit')->middleware('can:manage-timetable');
+    Route::put('/sessions/{classSession}', [ClassSessionController::class, 'update'])->name('sessions.update')->middleware('can:manage-timetable');
+    Route::delete('/sessions/{classSession}', [ClassSessionController::class, 'destroy'])->name('sessions.destroy')->middleware('can:manage-timetable');
+    Route::post('/sessions/{classSession}/slots', [TimetableSlotController::class, 'store'])->name('slots.store')->middleware('can:manage-timetable');
+    Route::delete('/slots/{slot}', [TimetableSlotController::class, 'destroy'])->name('slots.destroy')->middleware('can:manage-timetable');
+
+    Route::get('/classrooms', [ClassroomController::class, 'index'])->name('classrooms.index')->middleware('can:view-timetable');
+    Route::resource('classrooms', ClassroomController::class)->except(['index', 'show'])->middleware('can:manage-classrooms');
+    Route::get('/classrooms/{classroom}', [ClassroomController::class, 'show'])->name('classrooms.show')->middleware('can:view-timetable');
+
+    Route::resource('terms', TermController::class)->except('show')->middleware('can:manage-terms');
+    Route::post('/terms/{term}/current', [TermController::class, 'makeCurrent'])->name('terms.current')->middleware('can:manage-terms');
+
     // ---------- Fees and payments ----------
-    Route::middleware('can:manage-finance')->prefix('finance')->name('finance.')->group(function () {
-        Route::get('/', [FinanceController::class, 'index'])->name('index');
-        Route::get('/students/{student}', [FinanceController::class, 'show'])->name('students.show');
-        Route::get('/students/{student}/payments/create', [PaymentController::class, 'create'])->name('payments.create');
-        Route::post('/students/{student}/payments', [PaymentController::class, 'store'])->name('payments.store');
-        Route::get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])->name('payments.receipt');
-        Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy')->middleware('can:delete-payments');
-        Route::get('/students/{student}/charges/create', [ChargeController::class, 'create'])->name('charges.create');
-        Route::post('/students/{student}/charges', [ChargeController::class, 'store'])->name('charges.store');
-        Route::delete('/charges/{charge}', [ChargeController::class, 'destroy'])->name('charges.destroy');
-        Route::get('/billing', [BillingController::class, 'create'])->name('billing.create');
-        Route::post('/billing', [BillingController::class, 'store'])->name('billing.store');
+    Route::prefix('finance')->name('finance.')->group(function () {
+        // Viewing: accountant and management
+        Route::middleware('can:view-finance')->group(function () {
+            Route::get('/', [FinanceController::class, 'index'])->name('index');
+            Route::get('/students/{student}', [FinanceController::class, 'show'])->name('students.show');
+            Route::get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])->name('payments.receipt');
+        });
+
+        // Changing: accountant only
+        Route::middleware('can:manage-finance')->group(function () {
+            Route::get('/students/{student}/payments/create', [PaymentController::class, 'create'])->name('payments.create');
+            Route::post('/students/{student}/payments', [PaymentController::class, 'store'])->name('payments.store');
+            Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy')->middleware('can:delete-payments');
+            Route::get('/students/{student}/charges/create', [ChargeController::class, 'create'])->name('charges.create');
+            Route::post('/students/{student}/charges', [ChargeController::class, 'store'])->name('charges.store');
+            Route::delete('/charges/{charge}', [ChargeController::class, 'destroy'])->name('charges.destroy');
+            Route::get('/billing', [BillingController::class, 'create'])->name('billing.create');
+            Route::post('/billing', [BillingController::class, 'store'])->name('billing.store');
+        });
     });
 
     // ---------- Students' own pages ----------

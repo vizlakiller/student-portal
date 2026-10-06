@@ -1,4 +1,4 @@
-{{-- Mark change requests with approve/reject buttons for the subject teacher. Needs $requests. --}}
+{{-- Mark change requests with approve/reject buttons for the session lecturer. Needs $requests. --}}
 <div class="table-wrap">
     <table class="table">
         <thead>
@@ -19,8 +19,8 @@
                         <div class="muted small">{{ $change->result->student->student_no }}</div>
                     </td>
                     <td>
-                        {{ $change->result->subject->code }}
-                        <div class="muted small">Teacher: {{ $change->result->subject->teacher?->name ?? 'none' }}</div>
+                        {{ $change->result->subject->code }} {{ $change->result->classSession?->name }}
+                        <div class="muted small">Lecturer: {{ $change->result->responsibleLecturers()->pluck('name')->join(', ') ?: 'none' }}</div>
                     </td>
                     <td class="num strong">{{ $change->old_marks ?? '–' }} to {{ $change->new_marks }}</td>
                     <td>

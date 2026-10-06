@@ -25,6 +25,7 @@
                             <th>Code</th>
                             <th>Name</th>
                             <th>Level</th>
+                            <th>Department</th>
                             <th class="num">Students</th>
                             <th><span class="visually-hidden">Actions</span></th>
                         </tr>
@@ -35,6 +36,7 @@
                                 <td class="ref strong">{{ $programme->code }}</td>
                                 <td>{{ $programme->name }}</td>
                                 <td>{{ $programme->level }}</td>
+                                <td>{{ $programme->department?->code ?? '–' }}</td>
                                 <td class="num">
                                     <a href="{{ route('students.index', ['programme' => $programme->id]) }}">{{ $programme->students_count }}</a>
                                 </td>

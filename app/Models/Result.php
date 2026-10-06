@@ -13,10 +13,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
- * A student registered for a subject. Marks stay empty (null) until the
- * subject's teacher enters them.
+ * A student registered for a subject (in a session). Marks stay empty (null)
+ * until the session's lecturer enters them.
  */
-#[Fillable(['subject_id', 'semester', 'marks'])]
+#[Fillable(['subject_id', 'class_session_id', 'semester', 'marks'])]
 class Result extends Model
 {
     /** @use HasFactory<ResultFactory> */
@@ -32,12 +32,30 @@ class Result extends Model
         return $this->belongsTo(Subject::class);
     }
 
+    /** The session (group) the student was registered in, if any. */
+    public function classSession(): BelongsTo
+    {
+        return $this->belongsTo(ClassSession::class);
+    }
+
+    /**
+     * Lecturers who may enter marks and approve changes for this result:
+     * the lecturers of its session, or (for older results without a session)
+     * the lecturers of the subject.
+     */
+    public function responsibleLecturers(): \Illuminate\Support\Collection
+    {
+        return $this->class_session_id
+            ? $this->classSession->lecturers
+            : $this->subject->lecturers;
+    }
+
     public function changeRequests(): HasMany
     {
         return $this->hasMany(ResultChangeRequest::class);
     }
 
-    /** The head of department's change request still waiting for the teacher, if any. */
+    /** The head of department's change request still waiting for the lecturer, if any. */
     public function pendingChange(): HasOne
     {
         return $this->hasOne(ResultChangeRequest::class)->where('status', 'pending')->latestOfMany();

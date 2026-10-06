@@ -107,7 +107,12 @@
                                         <td class="ref">{{ $result->subject->code }}</td>
                                         <td>
                                             {{ $result->subject->name }}
-                                            <div class="muted small">{{ $result->subject->teacher?->name ?? 'No teacher assigned' }}</div>
+                                            <div class="muted small">
+                                                @if ($result->classSession)
+                                                    {{ $result->classSession->name }}, {{ $result->classSession->term->name }}:
+                                                @endif
+                                                {{ $result->responsibleLecturers()->pluck('name')->join(', ') ?: 'No lecturer assigned' }}
+                                            </div>
                                         </td>
                                         <td class="num">{{ $result->subject->credit_hours }}</td>
                                         <td class="num">{{ $result->marks ?? '–' }}</td>
@@ -121,7 +126,7 @@
                                         <td class="num">{{ $result->isMarked() ? number_format($result->grade_point, 2) : '–' }}</td>
                                         <td class="row-actions">
                                             @if ($result->pendingChange)
-                                                <span class="pending" title="Waiting for the teacher to approve">
+                                                <span class="pending" title="Waiting for the lecturer to approve">
                                                     Change to {{ $result->pendingChange->new_marks }} waiting
                                                 </span>
                                             @endif
