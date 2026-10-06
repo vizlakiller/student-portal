@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Edit account')
 @section('subtitle', $user->name)
-@section('back')<a href="{{ route('users.index') }}">Staff accounts</a>@endsection
+@section('back')<a href="{{ route('users.index') }}">User accounts</a>@endsection
 
 @section('content')
     <form method="POST" action="{{ route('users.update', $user) }}" class="panel form narrow">

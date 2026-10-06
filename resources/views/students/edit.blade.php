@@ -14,9 +14,10 @@
         </div>
     </form>
 
+    @can('delete-students')
     <section class="panel danger-zone">
         <h2>Delete this student</h2>
-        <p>This permanently removes {{ $student->name }} and all of their results.</p>
+        <p>This permanently removes {{ $student->name }}, their login, results, charges and payments.</p>
         <form method="POST" action="{{ route('students.destroy', $student) }}"
               onsubmit="return confirm(@js('Delete '.$student->name.' and all their results? This cannot be undone.'))">
             @csrf
@@ -24,4 +25,5 @@
             <button type="submit" class="btn btn-danger">Delete student</button>
         </form>
     </section>
+    @endcan
 @endsection

@@ -3,7 +3,9 @@
 @section('subtitle', 'The courses students enrol in.')
 
 @section('actions')
-    <a href="{{ route('programmes.create') }}" class="btn btn-primary">Add programme</a>
+    @can('manage-programmes')
+        <a href="{{ route('programmes.create') }}" class="btn btn-primary">Add programme</a>
+    @endcan
 @endsection
 
 @section('content')
@@ -11,7 +13,9 @@
         @if ($programmes->isEmpty())
             <div class="empty-state">
                 <p>No programmes yet. Students need a programme before you can add them.</p>
-                <a href="{{ route('programmes.create') }}" class="btn btn-primary">Add the first programme</a>
+                @can('manage-programmes')
+                    <a href="{{ route('programmes.create') }}" class="btn btn-primary">Add the first programme</a>
+                @endcan
             </div>
         @else
             <div class="table-wrap">
@@ -35,6 +39,7 @@
                                     <a href="{{ route('students.index', ['programme' => $programme->id]) }}">{{ $programme->students_count }}</a>
                                 </td>
                                 <td class="row-actions">
+                                    @can('manage-programmes')
                                     <a href="{{ route('programmes.edit', $programme) }}">Edit</a>
                                     <form method="POST" action="{{ route('programmes.destroy', $programme) }}"
                                           onsubmit="return confirm(@js('Delete programme '.$programme->code.'?'))">
@@ -42,6 +47,7 @@
                                         @method('DELETE')
                                         <button type="submit" class="link-button danger">Delete</button>
                                     </form>
+                                    @endcan
                                 </td>
                             </tr>
                         @endforeach

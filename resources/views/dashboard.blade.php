@@ -3,7 +3,9 @@
 @section('subtitle', 'Welcome back, '.auth()->user()->name.'.')
 
 @section('actions')
-    <a href="{{ route('students.create') }}" class="btn btn-primary">Add student</a>
+    @can('create-students')
+        <a href="{{ route('students.create') }}" class="btn btn-primary">Add student</a>
+    @endcan
 @endsection
 
 @section('content')
@@ -16,11 +18,11 @@
             <span class="stat-value">{{ $stats['active'] }}</span>
             <span class="stat-label">Currently active</span>
         </a>
-        <a href="{{ route('programmes.index') }}" class="stat">
+        <a href="{{ auth()->user()->can('view-programmes') ? route('programmes.index') : '#' }}" class="stat">
             <span class="stat-value">{{ $stats['programmes'] }}</span>
             <span class="stat-label">Programmes</span>
         </a>
-        <a href="{{ route('subjects.index') }}" class="stat">
+        <a href="{{ auth()->user()->can('view-subjects') ? route('subjects.index') : '#' }}" class="stat">
             <span class="stat-value">{{ $stats['subjects'] }}</span>
             <span class="stat-label">Subjects</span>
         </a>
@@ -40,7 +42,7 @@
                     <span class="hbar-value">{{ $programme->students_count }}</span>
                 </a>
             @empty
-                <p class="empty">No programmes yet. <a href="{{ route('programmes.create') }}">Add the first programme</a>.</p>
+                <p class="empty">No programmes yet.</p>
             @endforelse
         </section>
 
@@ -58,11 +60,12 @@
             </ul>
         </section>
 
+        @if ($canSeeResults)
         <section class="panel">
             <h2>Grade distribution</h2>
             @php $maxGrade = max(max($grades), 1); @endphp
             @if (array_sum($grades) === 0)
-                <p class="empty">No results recorded yet. Results appear here once you add them on a student's page.</p>
+                <p class="empty">No results recorded yet. Grades appear here once teachers enter marks.</p>
             @else
                 <div class="columns" role="img" aria-label="Number of results for each grade">
                     @foreach ($grades as $grade => $total)
@@ -79,7 +82,7 @@
         <section class="panel">
             <h2>Top students by CGPA</h2>
             @if ($topStudents->isEmpty())
-                <p class="empty">No results recorded yet.</p>
+                <p class="empty">No marks recorded yet.</p>
             @else
                 <table class="table compact">
                     <tbody>
@@ -96,6 +99,7 @@
                 </table>
             @endif
         </section>
+        @endif
     </div>
 
     <section class="panel">
@@ -104,7 +108,7 @@
             <a href="{{ route('students.index') }}">View all students</a>
         </div>
         @if ($recentStudents->isEmpty())
-            <p class="empty">No students yet. <a href="{{ route('students.create') }}">Add the first student</a>.</p>
+            <p class="empty">No students yet.</p>
         @else
             <div class="table-wrap">
                 <table class="table">

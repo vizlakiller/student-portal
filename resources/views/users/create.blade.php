@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Add account')
-@section('back')<a href="{{ route('users.index') }}">Staff accounts</a>@endsection
+@section('title', 'Add staff account')
+@section('back')<a href="{{ route('users.index') }}">User accounts</a>@endsection
 
 @section('content')
     <form method="POST" action="{{ route('users.store') }}" class="panel form narrow">

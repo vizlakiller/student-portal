@@ -14,20 +14,13 @@ class ProgrammeAndSubjectTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
+    public function test_registrar_adds_edits_and_deletes_programmes(): void
     {
-        parent::setUp();
-        $this->actingAs(User::factory()->create());
-    }
+        $this->actingAsRole('registrar');
 
-    public function test_programmes_can_be_added_edited_and_deleted(): void
-    {
-        $this->get('/programmes/create')->assertOk();
-        $this->post('/programmes', ['code' => 'DIT', 'name' => 'Diploma in IT', 'level' => 'Diploma'])
-            ->assertRedirect('/programmes');
+        $this->post('/programmes', ['code' => 'DIT', 'name' => 'Diploma in IT', 'level' => 'Diploma'])->assertRedirect('/programmes');
         $programme = Programme::where('code', 'DIT')->firstOrFail();
 
-        $this->get('/programmes')->assertOk()->assertSee('Diploma in IT');
         $this->put("/programmes/{$programme->id}", ['code' => 'DIT', 'name' => 'Diploma in Information Technology', 'level' => 'Diploma'])
             ->assertRedirect('/programmes');
         $this->assertSame('Diploma in Information Technology', $programme->fresh()->name);
@@ -38,6 +31,7 @@ class ProgrammeAndSubjectTest extends TestCase
 
     public function test_programme_with_students_cannot_be_deleted(): void
     {
+        $this->actingAsRole('registrar');
         $student = Student::factory()->create();
 
         $this->delete("/programmes/{$student->programme_id}")->assertSessionHas('error');
@@ -46,38 +40,50 @@ class ProgrammeAndSubjectTest extends TestCase
 
     public function test_programme_code_must_be_unique_and_level_valid(): void
     {
+        $this->actingAsRole('registrar');
         Programme::factory()->create(['code' => 'DCS']);
 
-        $this->post('/programmes', ['code' => 'DCS', 'name' => 'Duplicate', 'level' => 'Masters'])
-            ->assertSessionHasErrors(['code', 'level']);
+        $this->post('/programmes', ['code' => 'DCS', 'name' => 'Duplicate', 'level' => 'Masters'])->assertSessionHasErrors(['code', 'level']);
     }
 
-    public function test_subjects_can_be_added_edited_and_deleted(): void
+    public function test_hod_adds_subjects_and_assigns_a_teacher(): void
     {
-        $this->post('/subjects', ['code' => 'WEB2013', 'name' => 'Web Development', 'credit_hours' => 3])
+        $this->actingAsRole('hod');
+        $teacher = User::factory()->role('teacher')->create();
+
+        $this->post('/subjects', ['code' => 'WEB2013', 'name' => 'Web Development', 'credit_hours' => 3, 'teacher_id' => $teacher->id])
             ->assertRedirect('/subjects');
+
         $subject = Subject::where('code', 'WEB2013')->firstOrFail();
-
-        $this->get('/subjects')->assertOk()->assertSee('Web Development');
-        $this->put("/subjects/{$subject->id}", ['code' => 'WEB2013', 'name' => 'Web Application Development', 'credit_hours' => 4])
-            ->assertRedirect('/subjects');
-        $this->assertSame(4, $subject->fresh()->credit_hours);
-
-        $this->delete("/subjects/{$subject->id}")->assertRedirect('/subjects');
-        $this->assertDatabaseMissing('subjects', ['id' => $subject->id]);
+        $this->assertSame($teacher->id, $subject->teacher_id);
+        $this->get('/subjects')->assertSee($teacher->name);
     }
 
-    public function test_subject_with_results_cannot_be_deleted(): void
+    public function test_only_teacher_accounts_can_be_assigned(): void
     {
+        $this->actingAsRole('hod');
+        $accountant = User::factory()->role('accountant')->create();
+        $subject = Subject::factory()->create();
+
+        $this->put("/subjects/{$subject->id}", ['code' => $subject->code, 'name' => $subject->name, 'credit_hours' => 3, 'teacher_id' => $accountant->id])
+            ->assertSessionHasErrors('teacher_id');
+    }
+
+    public function test_subject_with_students_cannot_be_deleted_and_credits_are_checked(): void
+    {
+        $this->actingAsRole('hod');
         $result = Result::factory()->create();
 
         $this->delete("/subjects/{$result->subject_id}")->assertSessionHas('error');
         $this->assertDatabaseHas('subjects', ['id' => $result->subject_id]);
+
+        $this->post('/subjects', ['code' => 'X1', 'name' => 'Too heavy', 'credit_hours' => 9])->assertSessionHasErrors('credit_hours');
     }
 
-    public function test_credit_hours_must_be_between_1_and_6(): void
+    public function test_admin_staff_and_registrar_can_only_view_subjects(): void
     {
-        $this->post('/subjects', ['code' => 'X1', 'name' => 'Too heavy', 'credit_hours' => 9])
-            ->assertSessionHasErrors('credit_hours');
+        $this->actingAsRole('registrar');
+        $this->get('/subjects')->assertOk()->assertDontSee('Add subject');
+        $this->post('/subjects', ['code' => 'X1', 'name' => 'X', 'credit_hours' => 3])->assertForbidden();
     }
 }

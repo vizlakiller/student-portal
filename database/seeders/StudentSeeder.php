@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Programme;
 use App\Models\Student;
 use App\Models\Subject;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class StudentSeeder extends Seeder
@@ -88,18 +89,34 @@ class StudentSeeder extends Seeder
                 ],
             );
 
-            // Results for every semester the student has already completed.
+            // The student's login: their email, first password = student number.
+            if (! $student->user_id) {
+                $user = User::firstOrCreate(['email' => $student->email], [
+                    'name'                 => $student->name,
+                    'password'             => $student->student_no,
+                    'role'                 => 'student',
+                    'must_change_password' => true,
+                ]);
+                $student->user()->associate($user)->save();
+            }
+
+            // Marks for every semester already completed. Active students are
+            // also registered for this semester's subjects, waiting for marks.
             $ability = mt_rand(50, 85);   // each student has a typical level
 
             foreach (self::SEMESTER_SUBJECTS as $sem => $codes) {
-                if ($sem >= $semester) {
+                $current = $sem === $semester && $status === 'Active';
+
+                if ($sem > $semester || ($sem === $semester && ! $current)) {
                     break;
                 }
 
                 foreach ($codes as $subjectCode) {
+                    $marks = max(30, min(98, $ability + mt_rand(-15, 15)));   // always drawn, keeps the sequence stable
+
                     $student->results()->firstOrCreate(
                         ['subject_id' => $subjects[$subjectCode]],
-                        ['semester' => $sem, 'marks' => max(30, min(98, $ability + mt_rand(-15, 15)))],
+                        ['semester' => $sem, 'marks' => $current ? null : $marks],
                     );
                 }
             }

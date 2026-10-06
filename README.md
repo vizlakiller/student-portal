@@ -1,35 +1,58 @@
 # Student Portal
 
-A web-based student management system for colleges, training centres and tuition centres. It is built with Laravel 13, Blade and plain CSS. Staff can keep student records, record subject results, and print academic transcripts, with GPA and CGPA worked out automatically.
+A web-based student management system for colleges, training centres and tuition centres, built with Laravel 13, Blade and plain CSS. It covers student records, subject registration, marks with teacher approval, GPA/CGPA, transcripts, fees with printed receipts, and seven user roles. The super admin can rebrand the whole system (logo, colours, font) without touching code.
 
 ![Dashboard](docs/screenshots/dashboard.png)
 
+## Roles
+
+Each person sees only the menus, pages and buttons their role allows.
+
+| Role | Can do |
+|---|---|
+| **Super admin** | Everything, plus branding, user accounts and changing marks directly |
+| **Admin staff** | View students, teachers and subjects; edit students' personal and contact details. Cannot see results |
+| **Head of department** | Assign teachers to subjects, see all results, request mark changes (the subject teacher must approve) |
+| **Registrar** | Add and edit students, register them for subjects, see results (read-only), print transcripts, reset student passwords |
+| **Teacher** | Enter marks for their own subjects; approve or reject mark change requests |
+| **Accountant** | Bill fees (one student or a whole programme), record payments, print receipts, see who owes money |
+| **Student** | See their own subjects, results and transcript |
+
+All permissions live in one file, `config/roles.php`, so they can be adjusted for each client.
+
 ## Features
 
-- **Dashboard:** student totals, students per programme, status breakdown, grade distribution, top students by CGPA, and recently added students.
-- **Students:**
-  - add, edit and delete students
-  - search by name, student number or email
-  - filter by programme and status
-  - export the list to Excel (CSV)
-- **Student record:** a profile page with results grouped by semester, semester GPA and cumulative CGPA.
-- **Results:** enter marks from 0 to 100. The grade and grade point come from a configurable grading scale.
-- **Printable transcript:** a clean A4 layout you can print or save as PDF from the browser.
-- **Programmes and subjects:** manage courses and subjects with credit hours. The system blocks deleting records that are still in use.
-- **Staff accounts with roles:** admins manage accounts; staff manage academic records. Public sign-up is disabled.
-- **My profile:** each user can update their details and change their password.
+- **Student records:** search, filters, Excel (CSV) export, and a profile page with GPA per semester and CGPA.
+- **Automatic student logins:** adding a student creates their login. The first password is their student number, and they must change it at first login.
+- **Subject registration:** the registrar registers students for subjects each semester, and the subject's teacher enters the marks.
+- **Mark change approval:** a head of department's change takes effect only after the subject teacher approves it, and every request and decision is kept.
+- **Transcripts and receipts:** A4 layouts you can print or save as PDF, carrying the institution's logo and name.
+- **Fees:**
+  - running statements per student
+  - balances showing amount owing or credit
+  - one-click billing for a whole programme (safe to run twice)
+  - receipt numbers in the format RCP-2026-00001
+- **Branding page:** logo upload, portal and institution names, three colours with a live preview, and a choice of eight fonts. Colours too light for white text are refused.
 - **Security:**
-  - login rate limiting
-  - hashed passwords
-  - CSRF protection
+  - role checks on every page and action
+  - login rate limiting per email address
+  - hashed passwords and CSRF protection
   - validation on every form
   - result URLs scoped to their student
-- **Responsive layout** that works on phones and tablets.
-- **Automated tests:** 38 feature tests covering every module.
+- **Responsive:** works on phones and tablets.
+- **Automated tests:** 71 feature tests, including a check that every role can open only its own pages.
 
-| Student record | Printable transcript |
+| Mark change approval | Fees and payments |
 |---|---|
-| ![Student record](docs/screenshots/student.png) | ![Transcript](docs/screenshots/transcript.png) |
+| ![Mark changes](docs/screenshots/mark-changes.png) | ![Fees](docs/screenshots/fees.png) |
+
+| Student record | Official receipt |
+|---|---|
+| ![Student record](docs/screenshots/student.png) | ![Receipt](docs/screenshots/receipt.png) |
+
+| Branding (super admin) | Printable transcript |
+|---|---|
+| ![Branding](docs/screenshots/branding.png) | ![Transcript](docs/screenshots/transcript.png) |
 
 ## Tech stack
 
@@ -47,28 +70,37 @@ composer install
 cp .env.example .env
 php artisan key:generate
 php artisan migrate
-php artisan db:seed      # optional: sample programmes, subjects and 36 students
+php artisan db:seed      # optional: sample data and a demo login for every role
 ```
 
 With [Laravel Herd](https://herd.laravel.com), put the folder in your Herd directory and open `http://student-portal.test`. Without Herd, run `php artisan serve` and open `http://127.0.0.1:8000`.
 
 ### Demo accounts (after `db:seed`)
 
-| Role  | Email               | Password   |
-|-------|---------------------|------------|
-| Admin | `admin@example.com` | `password` |
-| Staff | `staff@example.com` | `password` |
+All staff passwords are `password`.
 
-Change these passwords before putting the system online.
+| Role | Email |
+|---|---|
+| Super admin | `admin@example.com` |
+| Admin staff | `adminstaff@example.com` |
+| Head of department | `hod@example.com` |
+| Registrar | `registrar@example.com` |
+| Teacher | `teacher@example.com` (also `teacher2@`, `teacher3@`) |
+| Accountant | `accountant@example.com` |
+| Student | `dcs2024001@student.example.com`, password `DCS2024001` (asked to choose a new one) |
+
+Change or delete these accounts before putting the system online.
 
 ## Customising for a client
 
 | What | Where |
 |---|---|
-| Portal name and the institution name on transcripts | `.env`: `PORTAL_NAME="Student Portal"` and `INSTITUTION_NAME="Kolej Teknologi Melaka"` |
+| Logo, portal name, institution name, colours, font | Log in as super admin, then go to **Branding** |
+| What each role can do | `config/roles.php` |
 | Grading scale (marks, grades, grade points) | `config/grading.php` |
-| Colours and fonts | the variables at the top of `public/css/app.css` |
-| Student statuses, genders and programme levels | the constants in `app/Models/Student.php` and `app/Models/Programme.php` |
+| Currency shown on fees and receipts | `.env`: `PORTAL_CURRENCY="RM"` |
+| Font choices offered on the Branding page | `config/portal.php` |
+| Student statuses, genders, programme levels, payment methods | the constants in `app/Models/Student.php`, `Programme.php` and `Payment.php` |
 
 ## Using MySQL instead of SQLite
 
@@ -94,15 +126,20 @@ php artisan test
 ## Where things are
 
 ```
-app/Http/Controllers/   Student, Result, Programme, Subject, User, Profile, Dashboard, Auth
-app/Models/             Student, Result, Programme, Subject, User
-app/Support/Grading.php Marks to grade, GPA and CGPA calculations
+app/Http/Controllers/   One controller per area: students, registrations, marks, mark changes,
+                        teachers, subjects, programmes, finance, payments, charges, billing,
+                        users, branding, profile, dashboard
+app/Models/             Student, Result, Subject, Programme, User, Charge, Payment,
+                        ResultChangeRequest, Setting
+app/Support/            Grading (GPA/CGPA), Branding (logo, colours, font), Color (contrast checks)
+config/roles.php        Roles and permissions
 config/grading.php      The grading scale
-config/portal.php       Portal and institution names
+config/portal.php       Default names, colours, fonts and currency
 database/migrations/    Table definitions
-database/seeders/       Sample data
-resources/views/        Blade templates (layouts, components and one folder per module)
+database/seeders/       Sample data and demo accounts
+resources/views/        Blade templates (layouts, components and one folder per area)
 public/css/app.css      All styles
-routes/web.php          All URLs
+public/uploads/         Uploaded logo (not committed to Git)
+routes/web.php          All URLs and who can open them
 tests/Feature/          Automated tests
 ```

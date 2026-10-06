@@ -4,17 +4,22 @@
 @section('back')<a href="{{ route('students.show', $student) }}">Back to {{ $student->name }}</a>@endsection
 
 @section('content')
-    <form method="POST" action="{{ route('students.results.update', [$student, $result]) }}" class="panel form narrow">
+    <form method="POST" action="{{ route('results.update', [$student, $result]) }}" class="panel form narrow">
         @csrf
         @method('PUT')
 
-        <p class="muted">Current grade: @include('partials.grade', ['grade' => $result->grade]) ({{ $result->marks }} marks)</p>
+        <p class="muted">
+            As super admin you can change marks directly, without the teacher's approval.
+            @if ($result->isMarked())
+                Current grade: @include('partials.grade', ['grade' => $result->grade]) ({{ $result->marks }} marks).
+            @endif
+        </p>
 
         <div class="form-grid">
             <x-input label="Semester taken" name="semester" type="number" min="1" max="12"
                      :value="$result->semester" required />
             <x-input label="Marks" name="marks" type="number" min="0" max="100"
-                     :value="$result->marks" required hint="0 to 100." />
+                     :value="$result->marks" hint="0 to 100. Leave empty if not marked yet." />
         </div>
 
         <div class="form-actions">

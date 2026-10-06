@@ -24,6 +24,12 @@ class Student extends Model
 
     public const GENDERS = ['Male', 'Female'];
 
+    /** Personal and contact details (admin staff can edit these). */
+    public const CONTACT_FIELDS = ['name', 'email', 'phone', 'gender', 'date_of_birth', 'address'];
+
+    /** Enrolment details (only the registrar can edit these). */
+    public const ENROLMENT_FIELDS = ['student_no', 'programme_id', 'intake_year', 'semester', 'status'];
+
     protected function casts(): array
     {
         return [
@@ -39,6 +45,22 @@ class Student extends Model
     public function results(): HasMany
     {
         return $this->hasMany(Result::class);
+    }
+
+    /** The student's own login account. */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function charges(): HasMany
+    {
+        return $this->hasMany(Charge::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
     }
 
     /**
@@ -60,11 +82,33 @@ class Student extends Model
     }
 
     /**
-     * Cumulative GPA across all results (null if no results yet).
+     * Adds charges_sum_amount and payments_sum_amount to each student,
+     * so balance() needs no extra queries.
+     */
+    public function scopeWithBalance(Builder $query): void
+    {
+        $query->withSum('charges', 'amount')->withSum('payments', 'amount');
+    }
+
+    /**
+     * Cumulative GPA across all marked results (null if none yet).
      * Load "results.subject" first to avoid extra queries.
      */
     public function cgpa(): ?float
     {
         return Grading::gpa($this->results);
+    }
+
+    /**
+     * Amount still owed: total charges minus total payments.
+     * A negative number means the student has paid in advance (credit).
+     */
+    public function balance(): float
+    {
+        // Use the totals from withBalance() when loaded, otherwise ask the database.
+        $charged = array_key_exists('charges_sum_amount', $this->attributes) ? $this->charges_sum_amount : $this->charges()->sum('amount');
+        $paid = array_key_exists('payments_sum_amount', $this->attributes) ? $this->payments_sum_amount : $this->payments()->sum('amount');
+
+        return round((float) $charged - (float) $paid, 2);
     }
 }

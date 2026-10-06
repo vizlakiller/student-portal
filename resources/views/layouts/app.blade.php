@@ -1,43 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title') | {{ config('portal.name') }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&display=swap">
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    @include('partials.head', ['title' => trim($__env->yieldContent('title'))])
 </head>
 <body>
+@php
+    $user = auth()->user();
+
+    // Number shown next to "Mark changes": requests still waiting for a decision.
+    $pendingChanges = $user->can('view-mark-changes')
+        ? \App\Models\ResultChangeRequest::visibleTo($user)->where('status', 'pending')->count()
+        : 0;
+@endphp
 <div class="app">
     <aside class="sidebar" id="sidebar">
-        <a class="brand" href="{{ route('dashboard') }}">
-            <span class="brand-seal" aria-hidden="true">SP</span>
-            <span>{{ config('portal.name') }}</span>
+        <a @class(['brand', 'has-logo' => \App\Support\Branding::logoUrl()]) href="{{ route('dashboard') }}">
+            @include('partials.brand')
+            <span>{{ \App\Support\Branding::portalName() }}</span>
         </a>
 
         <nav class="nav" aria-label="Main">
-            <a href="{{ route('dashboard') }}" @class(['active' => request()->routeIs('dashboard')])>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z"/></svg>
-                Dashboard
-            </a>
-            <a href="{{ route('students.index') }}" @class(['active' => request()->routeIs('students.*')])>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1M16 3.5a4 4 0 0 1 0 7M22 21v-1a6 6 0 0 0-4-5.6"/></svg>
-                Students
-            </a>
-            <a href="{{ route('programmes.index') }}" @class(['active' => request()->routeIs('programmes.*')])>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 8l10-5 10 5-10 5zM6 10v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5M22 8v6"/></svg>
-                Programmes
-            </a>
-            <a href="{{ route('subjects.index') }}" @class(['active' => request()->routeIs('subjects.*')])>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4zM8 9h8M8 13h6"/></svg>
-                Subjects
-            </a>
-            @can('admin')
+            @cannot('view-own-results')
+                <a href="{{ route('dashboard') }}" @class(['active' => request()->routeIs('dashboard')])>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z"/></svg>
+                    Dashboard
+                </a>
+            @endcannot
+            @can('view-own-results')
+                <a href="{{ route('my.results') }}" @class(['active' => request()->routeIs('my.*')])>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM8.5 13.5 7 21l5-3 5 3-1.5-7.5"/></svg>
+                    My results
+                </a>
+            @endcan
+            @can('view-students')
+                <a href="{{ route('students.index') }}" @class(['active' => request()->routeIs('students.*', 'registrations.*', 'results.*')])>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1M16 3.5a4 4 0 0 1 0 7M22 21v-1a6 6 0 0 0-4-5.6"/></svg>
+                    Students
+                </a>
+            @endcan
+            @can('teach')
+                <a href="{{ route('marks.index') }}" @class(['active' => request()->routeIs('marks.*')])>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6v3H9zM7 5.5H5v15h14v-15h-2M8.5 12l2.5 2.5 4.5-5"/></svg>
+                    My subjects
+                </a>
+            @endcan
+            @can('view-mark-changes')
+                <a href="{{ route('mark-changes.index') }}" @class(['active' => request()->routeIs('mark-changes.*')])>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h11M11 3l4 4-4 4M20 17H9M13 13l-4 4 4 4"/></svg>
+                    Mark changes
+                    @if ($pendingChanges)
+                        <span class="nav-badge" aria-label="{{ $pendingChanges }} waiting">{{ $pendingChanges }}</span>
+                    @endif
+                </a>
+            @endcan
+            @can('view-teachers')
+                <a href="{{ route('teachers.index') }}" @class(['active' => request()->routeIs('teachers.*')])>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v11H3zM8 21l4-6 4 6M7 9h6"/></svg>
+                    Teachers
+                </a>
+            @endcan
+            @can('view-subjects')
+                <a href="{{ route('subjects.index') }}" @class(['active' => request()->routeIs('subjects.*')])>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4zM8 9h8M8 13h6"/></svg>
+                    Subjects
+                </a>
+            @endcan
+            @can('view-programmes')
+                <a href="{{ route('programmes.index') }}" @class(['active' => request()->routeIs('programmes.*')])>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 8l10-5 10 5-10 5zM6 10v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5M22 8v6"/></svg>
+                    Programmes
+                </a>
+            @endcan
+            @can('manage-finance')
+                <a href="{{ route('finance.index') }}" @class(['active' => request()->routeIs('finance.*')])>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18v12H3zM3 7l3-3h12l3 3M16 13h2"/></svg>
+                    Fees and payments
+                </a>
+            @endcan
+
+            @canany(['manage-users', 'manage-branding'])
+                <p class="nav-section">System</p>
+            @endcanany
+            @can('manage-users')
                 <a href="{{ route('users.index') }}" @class(['active' => request()->routeIs('users.*')])>
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6zM9 12l2 2 4-4"/></svg>
-                    Staff accounts
+                    User accounts
+                </a>
+            @endcan
+            @can('manage-branding')
+                <a href="{{ route('branding.edit') }}" @class(['active' => request()->routeIs('branding.*')])>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 0 0 0 18c1.2 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8zM7.5 11.5h.01M10 7.5h.01M15 7.5h.01"/></svg>
+                    Branding
                 </a>
             @endcan
             <a href="{{ route('profile.edit') }}" @class(['active' => request()->routeIs('profile.*')])>
@@ -47,8 +100,8 @@
         </nav>
 
         <div class="sidebar-user">
-            <strong>{{ auth()->user()->name }}</strong>
-            <span>{{ ucfirst(auth()->user()->role) }}</span>
+            <strong>{{ $user->name }}</strong>
+            <span>{{ $user->roleLabel() }}</span>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="logout-button">Log out</button>

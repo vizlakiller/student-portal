@@ -9,7 +9,13 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * A student registered for a subject. Marks stay empty (null) until the
+ * subject's teacher enters them.
+ */
 #[Fillable(['subject_id', 'semester', 'marks'])]
 class Result extends Model
 {
@@ -26,20 +32,36 @@ class Result extends Model
         return $this->belongsTo(Subject::class);
     }
 
-    /**
-     * $result->grade, e.g. "A-". Always worked out from the marks,
-     * so changing config/grading.php updates every result.
-     */
-    protected function grade(): Attribute
+    public function changeRequests(): HasMany
     {
-        return Attribute::get(fn () => Grading::forMarks($this->marks)[0]);
+        return $this->hasMany(ResultChangeRequest::class);
+    }
+
+    /** The head of department's change request still waiting for the teacher, if any. */
+    public function pendingChange(): HasOne
+    {
+        return $this->hasOne(ResultChangeRequest::class)->where('status', 'pending')->latestOfMany();
+    }
+
+    public function isMarked(): bool
+    {
+        return $this->marks !== null;
     }
 
     /**
-     * $result->grade_point, e.g. 3.67.
+     * $result->grade, e.g. "A-" (null until marks are entered). Always worked
+     * out from the marks, so changing config/grading.php updates every result.
+     */
+    protected function grade(): Attribute
+    {
+        return Attribute::get(fn () => $this->isMarked() ? Grading::forMarks($this->marks)[0] : null);
+    }
+
+    /**
+     * $result->grade_point, e.g. 3.67 (null until marks are entered).
      */
     protected function gradePoint(): Attribute
     {
-        return Attribute::get(fn () => Grading::forMarks($this->marks)[1]);
+        return Attribute::get(fn () => $this->isMarked() ? Grading::forMarks($this->marks)[1] : null);
     }
 }

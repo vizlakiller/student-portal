@@ -32,12 +32,23 @@ class GradingTest extends TestCase
         $this->assertSame(3.33, Grading::gpa($results));
     }
 
+    public function test_subjects_without_marks_are_left_out_of_the_gpa(): void
+    {
+        $results = collect([
+            $this->makeResult(85, 4),     // A 4.00
+            $this->makeResult(null, 3),   // registered, not marked yet
+        ]);
+
+        $this->assertSame(4.0, Grading::gpa($results));
+        $this->assertNull(Grading::gpa(collect([$this->makeResult(null, 3)])));
+    }
+
     public function test_gpa_is_null_without_results(): void
     {
         $this->assertNull(Grading::gpa(collect()));
     }
 
-    private function makeResult(int $marks, int $credits): Result
+    private function makeResult(?int $marks, int $credits): Result
     {
         $result = new Result(['marks' => $marks]);
         $result->setRelation('subject', new Subject(['credit_hours' => $credits]));

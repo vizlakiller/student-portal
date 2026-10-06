@@ -40,13 +40,15 @@ class Grading
      * Credit-weighted average grade point:
      * sum(grade point × credit hours) ÷ sum(credit hours).
      *
-     * Each result must have its subject loaded. Returns null when
-     * there are no results yet.
+     * Only results that have marks count. Each result must have its subject
+     * loaded. Returns null when there are no marked results yet.
      *
      * @param  Collection<int, \App\Models\Result>  $results
      */
     public static function gpa(Collection $results): ?float
     {
+        $results = $results->filter(fn ($result) => $result->marks !== null);
+
         $credits = $results->sum(fn ($result) => $result->subject->credit_hours);
 
         if ($credits === 0) {

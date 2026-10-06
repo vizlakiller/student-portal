@@ -1,25 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Academic transcript: {{ $student->name }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&display=swap">
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    @include('partials.head', ['title' => e('Academic transcript: '.$student->name)])
 </head>
 <body class="print-page">
     <div class="print-toolbar">
-        <a href="{{ route('students.show', $student) }}" class="btn">Back to student</a>
+        <a href="{{ auth()->user()->hasRole('student') ? route('my.results') : route('students.show', $student) }}" class="btn">Back</a>
         <button type="button" class="btn btn-primary" onclick="window.print()">Print or save as PDF</button>
     </div>
 
     <article class="transcript">
         <header class="transcript-header">
-            <div>
-                <p class="transcript-institution">{{ config('portal.institution') }}</p>
-                <h1>Academic transcript</h1>
+            <div class="print-brand">
+                @if (\App\Support\Branding::logoUrl())
+                    <img src="{{ \App\Support\Branding::logoUrl() }}" alt="" class="print-logo">
+                @endif
+                <div>
+                    <p class="transcript-institution">{{ \App\Support\Branding::institution() }}</p>
+                    <h1>Academic transcript</h1>
+                </div>
             </div>
             <p class="muted">Issued {{ now()->format('j F Y') }}</p>
         </header>
@@ -32,7 +31,7 @@
             <div><dt>Status</dt><dd>{{ $student->status }}</dd></div>
         </dl>
 
-        @forelse ($semesters as $semester => $data)
+        @forelse ($semesters->filter(fn ($data) => $data['gpa'] !== null) as $semester => $data)
             <section class="transcript-semester">
                 <h2>Semester {{ $semester }}</h2>
                 <table class="table results-table">
@@ -43,7 +42,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($data['results'] as $result)
+                        @foreach ($data['results']->filter->isMarked() as $result)
                             <tr>
                                 <td>{{ $result->subject->code }}</td>
                                 <td>{{ $result->subject->name }}</td>

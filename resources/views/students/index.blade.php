@@ -4,7 +4,9 @@
 
 @section('actions')
     <a href="{{ route('students.export', request()->query()) }}" class="btn">Export to Excel (CSV)</a>
-    <a href="{{ route('students.create') }}" class="btn btn-primary">Add student</a>
+    @can('create-students')
+        <a href="{{ route('students.create') }}" class="btn btn-primary">Add student</a>
+    @endcan
 @endsection
 
 @section('content')
@@ -50,7 +52,9 @@
                     <a href="{{ route('students.index') }}" class="btn">Clear filters</a>
                 @else
                     <p>No students yet.</p>
-                    <a href="{{ route('students.create') }}" class="btn btn-primary">Add the first student</a>
+                    @can('create-students')
+                        <a href="{{ route('students.create') }}" class="btn btn-primary">Add the first student</a>
+                    @endcan
                 @endif
             </div>
         @else
@@ -62,14 +66,15 @@
                             <th>Name</th>
                             <th>Programme</th>
                             <th class="num">Semester</th>
-                            <th class="num">CGPA</th>
+                            @can('view-results')
+                                <th class="num">CGPA</th>
+                            @endcan
                             <th>Status</th>
                             <th><span class="visually-hidden">Actions</span></th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($students as $student)
-                            @php $cgpa = $student->cgpa(); @endphp
                             <tr>
                                 <td class="ref">{{ $student->student_no }}</td>
                                 <td>
@@ -78,10 +83,15 @@
                                 </td>
                                 <td title="{{ $student->programme->name }}">{{ $student->programme->code }}</td>
                                 <td class="num">{{ $student->semester }}</td>
-                                <td class="num">{{ $cgpa !== null ? number_format($cgpa, 2) : '–' }}</td>
+                                @can('view-results')
+                                    @php $cgpa = $student->cgpa(); @endphp
+                                    <td class="num">{{ $cgpa !== null ? number_format($cgpa, 2) : '–' }}</td>
+                                @endcan
                                 <td>@include('partials.status', ['status' => $student->status])</td>
                                 <td class="row-actions">
-                                    <a href="{{ route('students.edit', $student) }}">Edit</a>
+                                    @can('edit-student-contact')
+                                        <a href="{{ route('students.edit', $student) }}">Edit</a>
+                                    @endcan
                                 </td>
                             </tr>
                         @endforeach

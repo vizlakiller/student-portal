@@ -38,6 +38,21 @@ class AuthTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_repeated_wrong_passwords_are_slowed_down_per_email(): void
+    {
+        $user = User::factory()->create();
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/login', ['email' => $user->email, 'password' => 'wrong']);
+        }
+
+        $this->post('/login', ['email' => $user->email, 'password' => 'wrong'])->assertStatus(429);
+
+        // Someone else on the same network can still log in
+        $colleague = User::factory()->create(['password' => 'colleague-pass']);
+        $this->post('/login', ['email' => $colleague->email, 'password' => 'colleague-pass'])->assertRedirect('/dashboard');
+    }
+
     public function test_public_registration_is_disabled(): void
     {
         $this->get('/register')->assertNotFound();
